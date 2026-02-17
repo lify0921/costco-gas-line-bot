@@ -17,6 +17,14 @@ def send_price_message(date_str, price, imgur_url=None, note=None):
 
     print(f"トークン長: {len(token)}, 先頭: {token[:5]}..., 末尾: ...{token[-5:]}")
 
+    # トークン検証
+    verify_resp = requests.get(
+        "https://api.line.me/v2/bot/info",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=10,
+    )
+    print(f"トークン検証: status={verify_resp.status_code}, body={verify_resp.text[:200]}")
+
     price_text = f"{price:.0f}" if price == int(price) else f"{price}"
     text = (
         f"\u26fd コストコ久山 ガソリン価格\n"
