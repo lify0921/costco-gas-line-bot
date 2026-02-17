@@ -1,0 +1,49 @@
+name: Daily Gas Price
+
+on:
+  schedule:
+    - cron: "3 23 * * *"  # 23:03 UTC = 08:03 JST
+  workflow_dispatch:
+
+concurrency:
+  group: daily-price
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Japanese fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          rm -rf ~/.cache/matplotlib
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+        run: cd src && python main.py
+
+      - name: Commit and push CSV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/prices.csv
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Update prices.csv $(date -u +%Y-%m-%d)"
+          git push
