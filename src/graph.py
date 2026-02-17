@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 import matplotlib
@@ -5,8 +6,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-
-GRAPH_PATH = "data/graph.png"
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+GRAPH_PATH = os.path.join(ROOT_DIR, "data", "graph.png")
 
 
 def generate_graph(dates, prices):

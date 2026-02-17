@@ -20,19 +20,25 @@ def scrape_current_price():
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
-        # 会員価格セクションを探す
-        member_section = None
+        # 会員価格セクションの次のテーブルを探す
+        member_h5 = None
         for h5 in soup.find_all("h5"):
             if "会員" in h5.get_text():
-                member_section = h5.find_parent("div")
+                member_h5 = h5
                 break
 
-        if member_section is None:
+        if member_h5 is None:
             print("会員価格セクションが見つかりません")
             return None
 
+        # h5の後にあるテーブルを取得
+        table = member_h5.find_next("table")
+        if table is None:
+            print("会員価格テーブルが見つかりません")
+            return None
+
         # レギュラー価格を探す
-        for row in member_section.find_all("tr"):
+        for row in table.find_all("tr"):
             cells = row.find_all("td")
             if not cells:
                 continue

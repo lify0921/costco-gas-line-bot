@@ -9,7 +9,9 @@ from graph import generate_graph, GRAPH_PATH
 from imgur import upload_image
 from line_bot import send_price_message
 
-CSV_PATH = "data/prices.csv"
+# プロジェクトルートを基準にパスを解決
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CSV_PATH = os.path.join(ROOT_DIR, "data", "prices.csv")
 TZ = ZoneInfo("Asia/Tokyo")
 
 
