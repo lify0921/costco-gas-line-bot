@@ -43,6 +43,7 @@ def scrape_current_price():
             if len(cells) < 2:
                 continue
             label = cells[0].get_text(strip=True)
+            print(f"  セル発見: '{label}' -> '{cells[1].get_text(strip=True)}'")
             if "レギュラー" in label:
                 price_text = cells[1].get_text(strip=True)
                 match = re.search(r"(\d+(?:\.\d+)?)", price_text)
