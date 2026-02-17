@@ -31,30 +31,27 @@ def scrape_current_price():
             print("会員価格セクションが見つかりません")
             return None
 
-        # h5の後にあるテーブルを取得
+        # h5の後にあるテーブルから最新価格を取得
+        # テーブル構造: 各行が [日付情報, 価格] の履歴
         table = member_h5.find_next("table")
         if table is None:
             print("会員価格テーブルが見つかりません")
             return None
 
-        # レギュラー価格を探す
         for row in table.find_all("tr"):
             cells = row.find_all("td")
             if len(cells) < 2:
                 continue
-            label = cells[0].get_text(strip=True)
-            print(f"  セル発見: '{label}' -> '{cells[1].get_text(strip=True)}'")
-            if "レギュラー" in label:
-                price_text = cells[1].get_text(strip=True)
-                match = re.search(r"(\d+(?:\.\d+)?)", price_text)
-                if match:
-                    price = float(match.group(1))
-                    if PRICE_MIN <= price <= PRICE_MAX:
-                        return price
-                    print(f"異常値を検出: {price}円")
-                    return None
+            price_text = cells[1].get_text(strip=True)
+            match = re.search(r"(\d+(?:\.\d+)?)", price_text)
+            if match:
+                price = float(match.group(1))
+                if PRICE_MIN <= price <= PRICE_MAX:
+                    print(f"最新会員価格: {price}円")
+                    return price
+                print(f"異常値を検出: {price}円")
 
-        print("レギュラー価格が見つかりません")
+        print("価格が見つかりません")
         return None
     except Exception as e:
         print(f"スクレイピングエラー: {e}")
