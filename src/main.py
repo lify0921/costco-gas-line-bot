@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from scraper import scrape_current_price, scrape_price_history
 from graph import generate_graph, GRAPH_PATH
-from imgur import upload_to_imgur
+from imgur import upload_image
 from line_bot import send_price_message
 
 CSV_PATH = "data/prices.csv"
@@ -88,10 +88,10 @@ def main():
     if len(dates) >= 2:
         generate_graph(dates, prices)
 
-        # 6. Imgur アップロード
-        imgur_url = upload_to_imgur(GRAPH_PATH)
+        # 6. 画像アップロード
+        imgur_url = upload_image(GRAPH_PATH)
         if imgur_url is None:
-            print("Imgur アップロード失敗、テキストのみ送信")
+            print("画像アップロード失敗、テキストのみ送信")
     else:
         print("データが2件未満のためグラフ生成スキップ")
 
