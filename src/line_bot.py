@@ -1,13 +1,9 @@
 import os
+import json
 
-from linebot.v3.messaging import (
-    ApiClient,
-    Configuration,
-    MessagingApi,
-    PushMessageRequest,
-    TextMessage,
-    ImageMessage,
-)
+import requests
+
+LINE_API_URL = "https://api.line.me/v2/bot/message/push"
 
 
 def send_price_message(date_str, price, imgur_url=None, note=None):
@@ -19,6 +15,8 @@ def send_price_message(date_str, price, imgur_url=None, note=None):
         print("LINE認証情報が設定されていません")
         return False
 
+    print(f"トークン長: {len(token)}, 先頭: {token[:5]}..., 末尾: ...{token[-5:]}")
+
     price_text = f"{price:.0f}" if price == int(price) else f"{price}"
     text = (
         f"\u26fd コストコ久山 ガソリン価格\n"
@@ -29,24 +27,29 @@ def send_price_message(date_str, price, imgur_url=None, note=None):
     if note:
         text += f"\n\n{note}"
 
-    messages = [TextMessage(text=text)]
+    messages = [{"type": "text", "text": text}]
     if imgur_url:
-        messages.append(
-            ImageMessage(
-                original_content_url=imgur_url,
-                preview_image_url=imgur_url,
-            )
-        )
+        messages.append({
+            "type": "image",
+            "originalContentUrl": imgur_url,
+            "previewImageUrl": imgur_url,
+        })
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+    body = {"to": user_id, "messages": messages}
 
     try:
-        config = Configuration(access_token=token)
-        with ApiClient(config) as api_client:
-            api = MessagingApi(api_client)
-            api.push_message(
-                PushMessageRequest(to=user_id, messages=messages)
-            )
-        print("LINE送信成功")
-        return True
+        resp = requests.post(LINE_API_URL, headers=headers, json=body, timeout=30)
+        print(f"LINE API status: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"LINE API response: {resp.text}")
+        if resp.status_code == 200:
+            print("LINE送信成功")
+            return True
+        return False
     except Exception as e:
         print(f"LINE送信エラー: {e}")
         return False
