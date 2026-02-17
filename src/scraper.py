@@ -40,7 +40,7 @@ def scrape_current_price():
         # レギュラー価格を探す
         for row in table.find_all("tr"):
             cells = row.find_all("td")
-            if not cells:
+            if len(cells) < 2:
                 continue
             label = cells[0].get_text(strip=True)
             if "レギュラー" in label:
