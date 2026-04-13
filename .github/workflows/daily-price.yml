@@ -2,7 +2,7 @@ name: Daily Gas Price
 
 on:
   schedule:
-    - cron: "3 23 * * *"  # 23:03 UTC = 08:03 JST
+    - cron: "30 0 * * *"  # 00:30 UTC = 09:30 JST
   workflow_dispatch:
 
 concurrency:
@@ -36,14 +36,17 @@ jobs:
         env:
           LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
           LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
-          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: cd src && python main.py
 
-      - name: Commit and push CSV
+      - name: Commit and push data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/prices.csv
+          git add data/prices.csv data/last_notified.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "Update prices.csv $(date -u +%Y-%m-%d)"
-          git push
+          git commit -m "Update data $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "push失敗、リトライ $i/3"
+            sleep 5
+          done
