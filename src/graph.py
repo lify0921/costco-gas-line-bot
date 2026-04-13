@@ -1,3 +1,4 @@
+import glob
 import os
 from datetime import datetime, timedelta
 
@@ -7,10 +8,31 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GRAPH_PATH = os.path.join(ROOT_DIR, "data", "graph.png")
+GRAPHS_DIR = os.path.join(ROOT_DIR, "data", "graphs")
+GRAPH_PATH = os.path.join(ROOT_DIR, "data", "graph.png")  # 互換用（使わない）
+GRAPH_RETENTION_DAYS = 30
 
 
-def generate_graph(dates, prices):
+def cleanup_old_graphs():
+    """GRAPH_RETENTION_DAYS より古いグラフ画像を削除する。"""
+    if not os.path.isdir(GRAPHS_DIR):
+        return
+    cutoff = datetime.now() - timedelta(days=GRAPH_RETENTION_DAYS)
+    removed = 0
+    for path in glob.glob(os.path.join(GRAPHS_DIR, "graph-*.png")):
+        name = os.path.basename(path)
+        try:
+            d = datetime.strptime(name[len("graph-"):-len(".png")], "%Y-%m-%d")
+        except ValueError:
+            continue
+        if d < cutoff:
+            os.remove(path)
+            removed += 1
+    if removed:
+        print(f"古いグラフを削除: {removed}件")
+
+
+def generate_graph(dates, prices, date_str=None):
     """年間推移と直近2週間の2段グラフを生成する。
     Args:
         dates: list of date strings "YYYY-MM-DD"
@@ -66,7 +88,11 @@ def generate_graph(dates, prices):
         ax2.set_ylim(min(r_prices) - margin, max(r_prices) + margin)
 
     fig.tight_layout()
-    fig.savefig(GRAPH_PATH, bbox_inches="tight")
+    os.makedirs(GRAPHS_DIR, exist_ok=True)
+    if date_str is None:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    out_path = os.path.join(GRAPHS_DIR, f"graph-{date_str}.png")
+    fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
-    print(f"グラフ生成完了: {GRAPH_PATH}")
-    return GRAPH_PATH
+    print(f"グラフ生成完了: {out_path}")
+    return out_path

@@ -32,21 +32,48 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run bot
-        env:
-          LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
-          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
-        run: cd src && python main.py
+      - name: Prepare (scrape + graph)
+        run: cd src && python main.py --stage prepare
 
-      - name: Commit and push data
+      - name: Commit and push graph/CSV
+        id: push_graph
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/prices.csv data/last_notified.json
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "Update data $(date -u +%Y-%m-%d)"
+          git add data/prices.csv data/graphs/
+          if git diff --cached --quiet; then
+            echo "No graph/CSV changes"
+            exit 0
+          fi
+          git commit -m "Update graph/CSV $(date -u +%Y-%m-%d)"
           for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
+            git pull --rebase origin main && git push && exit 0
             echo "push失敗、リトライ $i/3"
             sleep 5
           done
+          echo "push失敗（上限到達）"
+          exit 1
+
+      - name: Wait for GitHub raw CDN propagation
+        run: sleep 15
+
+      - name: Notify (send LINE)
+        env:
+          LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
+          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+        run: cd src && python main.py --stage notify
+
+      - name: Commit and push last_notified
+        run: |
+          git add data/last_notified.json
+          if git diff --cached --quiet; then
+            echo "No last_notified changes"
+            exit 0
+          fi
+          git commit -m "Update last_notified $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            echo "push失敗、リトライ $i/3"
+            sleep 5
+          done
+          exit 1
