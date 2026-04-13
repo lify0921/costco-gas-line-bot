@@ -2,7 +2,7 @@ name: Daily Gas Price
 
 on:
   schedule:
-    - cron: "30 0 * * *"  # 00:30 UTC = 09:30 JST
+    - cron: "0 3 * * *"  # 03:00 UTC = 12:00 JST
   workflow_dispatch:
 
 concurrency:
